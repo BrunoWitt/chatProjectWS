@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginUser } from "../services/login_service.js";
+import { LoginUser } from "../services/login_service.js";
 
 const router = Router();
 
@@ -7,7 +7,7 @@ router.post("/login", async (req, res) => {
     try {
         const name = req.body?.name;
 
-        const user = await loginUser(name);
+        const user = await LoginUser(name);
         if (!user) return res.status(401).json({ ok: false, error: "Usuário não encontrado" });
 
         return res.json({ ok: true, user });

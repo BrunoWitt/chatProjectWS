@@ -1,9 +1,19 @@
-import express from "express"
-import cors from "cors"
+import express from "express";
+import cors from "cors";
 
-export const app = express()
+import loginRoutes from "./routes/login_route.js";
+import usersRoutes from "./routes/users_route.js";
+import conversationsRoutes from "./routes/conversations_route.js";
 
-app.use(cors({ origin: "http://localhost:5173", credentials: true }))
-app.use(express.json())
+export const app = express();
 
-//Rotas
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json());
+
+// rotas
+app.use(loginRoutes);          // cria /login
+app.use(usersRoutes);          // cria /users
+app.use(conversationsRoutes);  // cria /conversations...
+
+// health opcional
+app.get("/health", (req, res) => res.json({ ok: true }));
