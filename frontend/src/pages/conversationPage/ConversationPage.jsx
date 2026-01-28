@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../../api/client.js";
+import { useConversationRealtime } from "../../hooks/useConversationRealtime";
 
 export default function ConversationPage() {
     const { id } = useParams(); // conversationId
@@ -9,6 +10,8 @@ export default function ConversationPage() {
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState("");
     const [err, setErr] = useState("");
+
+    useConversationRealtime(id, setMessages);
 
     async function loadMessages() {
         setErr("");

@@ -1,5 +1,5 @@
 import { connection } from "../db.js";
-import { getIO, conversationRoomName } from "../socket.js";
+import { getIO, conversationRoomName } from "../sockets/socket.js";
 
 /**
  * Lista mensagens de uma conversa, garantindo que o usuário participa dela.
@@ -61,27 +61,46 @@ export async function createConversationMessage({ conversationId, userId, conten
     if (!text) throw new Error("Mensagem vazia");
 
     const member = await connection.query(
-        `SELECT 1
-        FROM conversation_participants
+        `SELECT 1 FROM conversation_participants
         WHERE conversation_id = $1 AND user_id = $2
         LIMIT 1`,
         [cid, uid]
     );
-
     if (member.rowCount === 0) throw new Error("Você não participa dessa conversa");
 
-    const r = await connection.query(
+    // 1) cria
+    const ins = await connection.query(
         `
         INSERT INTO messages (conversation_id, sender_id, content)
         VALUES ($1, $2, $3)
-        RETURNING id, conversation_id, sender_id, content, created_at
+        RETURNING id
         `,
         [cid, uid, text]
     );
 
-    const message = r.rows[0];
+    const messageId = ins.rows[0].id;
 
-    // 🔥 emite para todos conectados na conversa
+    // 2) busca completo com JOIN
+    const full = await connection.query(
+        `
+        SELECT
+        m.id,
+        m.conversation_id,
+        m.sender_id,
+        u.name AS sender_name,
+        m.content,
+        m.created_at
+        FROM messages m
+        JOIN users u ON u.id = m.sender_id
+        WHERE m.id = $1
+        LIMIT 1
+        `,
+        [messageId]
+    );
+
+    const message = full.rows[0];
+
+    // 3) emite com sender_name
     const io = getIO();
     io.to(conversationRoomName(cid)).emit("message:new", {
         scope: "conversation",
